@@ -6,7 +6,7 @@
   - Configure application.yml with basic settings
   - _Requirements: 1.1, 1.3, 1.4_
 
-- [ ] 2. Implement core security configuration
+- [x] 2. Implement core security configuration
   - Create SecurityConfig class with OIDC and JWT configuration
   - Configure CORS settings for frontend integration
   - Set up basic authentication filter chain
