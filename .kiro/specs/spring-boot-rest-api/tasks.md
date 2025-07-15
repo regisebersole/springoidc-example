@@ -19,7 +19,7 @@
   - Write unit tests for JWT creation and validation
   - _Requirements: 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9_
 
-- [ ] 4. Implement OIDC token validation service
+- [x] 4. Implement OIDC token validation service
   - Create OidcTokenValidator for validating opaque access tokens
   - Implement token introspection with OIDC provider
   - Extract user information from validated tokens
