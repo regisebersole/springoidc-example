@@ -16,7 +16,7 @@ spring:
 # Application specific configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:mySecretKey}
+    secret: ${JWT_SECRET:myVeryLongSecretKeyThatIsAtLeast256BitsLongForHmacSha256AlgorithmSecurity}
     expiration: 1200 # 20 minutes in seconds
     max-session-duration: 86400 # 24 hours in seconds
   cors:
