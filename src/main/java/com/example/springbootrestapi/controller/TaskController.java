@@ -1,6 +1,8 @@
 package com.example.springbootrestapi.controller;
 
 import com.example.springbootrestapi.model.Task;
+import com.example.springbootrestapi.model.CreateTaskRequest;
+import com.example.springbootrestapi.model.UpdateTaskRequest;
 import com.example.springbootrestapi.service.TaskService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -59,14 +61,15 @@ public class TaskController {
 
     /**
      * POST /api/tasks - Create a new task
-     * @param task Task to create
+     * @param createRequest Task creation request with validation
      * @return Created task with HTTP 201
      */
     @PostMapping
-    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task) {
-        logger.debug("Creating new task: {}", task.getTitle());
+    public ResponseEntity<Task> createTask(@Valid @RequestBody CreateTaskRequest createRequest) {
+        logger.debug("Creating new task: {}", createRequest.getTitle());
         
         String createdBy = getCurrentUserId();
+        Task task = createRequest.toTask();
         Task createdTask = taskService.createTask(task, createdBy);
         
         logger.info("Created task with ID: {}", createdTask.getId());
@@ -76,17 +79,22 @@ public class TaskController {
     /**
      * PUT /api/tasks/{id} - Update an existing task
      * @param id Task ID to update
-     * @param task Updated task data
+     * @param updateRequest Updated task data with validation
      * @return Updated task with HTTP 200 if found, HTTP 404 if not found
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @Valid @RequestBody Task task) {
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @Valid @RequestBody UpdateTaskRequest updateRequest) {
         logger.debug("Updating task with ID: {}", id);
         
-        return taskService.updateTask(id, task)
-                .map(updatedTask -> {
-                    logger.info("Updated task with ID: {}", id);
-                    return ResponseEntity.ok(updatedTask);
+        return taskService.getTaskById(id)
+                .map(existingTask -> {
+                    updateRequest.applyTo(existingTask);
+                    Task updatedTask = taskService.updateTask(id, existingTask).orElse(null);
+                    if (updatedTask != null) {
+                        logger.info("Updated task with ID: {}", id);
+                        return ResponseEntity.ok(updatedTask);
+                    }
+                    return ResponseEntity.notFound().<Task>build();
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

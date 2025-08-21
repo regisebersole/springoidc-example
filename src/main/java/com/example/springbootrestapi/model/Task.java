@@ -1,8 +1,6 @@
 package com.example.springbootrestapi.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +24,13 @@ public class Task {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
+    
+    @Email(message = "Invalid email format")
+    private String assigneeEmail;
+    
+    @Min(value = 1, message = "Priority must be at least 1")
+    @Max(value = 5, message = "Priority must not exceed 5")
+    private Integer priority;
 
     public Task() {
         this.createdAt = LocalDateTime.now();
@@ -95,6 +100,22 @@ public class Task {
 
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public String getAssigneeEmail() {
+        return assigneeEmail;
+    }
+
+    public void setAssigneeEmail(String assigneeEmail) {
+        this.assigneeEmail = assigneeEmail;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     /**
