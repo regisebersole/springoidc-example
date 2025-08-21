@@ -40,7 +40,7 @@
   - Write unit tests for filter behavior
   - _Requirements: 4.1, 4.5, 10.6_
 
-- [ ] 7. Create REST API endpoints with proper HTTP methods
+- [x] 7. Create REST API endpoints with proper HTTP methods
   - Implement basic CRUD endpoints with GET, POST, PUT, DELETE
   - Add request/response JSON serialization
   - Implement proper HTTP status codes for different scenarios
