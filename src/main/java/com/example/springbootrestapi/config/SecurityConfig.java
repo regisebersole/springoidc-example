@@ -1,5 +1,7 @@
 package com.example.springbootrestapi.config;
 
+import com.example.springbootrestapi.security.OidcTokenFilter;
+import com.example.springbootrestapi.security.SessionJwtFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -21,6 +24,9 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final OidcTokenFilter oidcTokenFilter;
+    private final SessionJwtFilter sessionJwtFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
@@ -42,6 +48,11 @@ public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.opaque-token.client-secret:}")
     private String clientSecret;
+
+    public SecurityConfig(OidcTokenFilter oidcTokenFilter, SessionJwtFilter sessionJwtFilter) {
+        this.oidcTokenFilter = oidcTokenFilter;
+        this.sessionJwtFilter = sessionJwtFilter;
+    }
 
     /**
      * Configures the main security filter chain with OIDC and JWT support.
@@ -81,6 +92,12 @@ public class SecurityConfig {
                 // Default - require authentication
                 .anyRequest().authenticated()
             )
+            
+            // Add custom security filters
+            // SessionJwtFilter should run first to handle session JWTs
+            .addFilterBefore(sessionJwtFilter, UsernamePasswordAuthenticationFilter.class)
+            // OidcTokenFilter should run after SessionJwtFilter to handle OIDC tokens
+            .addFilterAfter(oidcTokenFilter, SessionJwtFilter.class)
             
             // Configure OAuth2 Resource Server for opaque token introspection
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -149,7 +166,8 @@ public class SecurityConfig {
             "Accept",
             "Origin",
             "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
+            "Access-Control-Request-Headers",
+            "X-Session-Token"
         ));
         
         // Set max age for preflight requests
