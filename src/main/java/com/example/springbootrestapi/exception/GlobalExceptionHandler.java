@@ -114,6 +114,66 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle resource not found exceptions (HTTP 404)
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+        
+        logger.warn("Resource not found: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                "RESOURCE_NOT_FOUND",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Handle authentication exceptions (HTTP 401)
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException ex, WebRequest request) {
+        
+        logger.warn("Authentication failed: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                "AUTHENTICATION_FAILED",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * Handle authorization exceptions (HTTP 403)
+     */
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationException(
+            AuthorizationException ex, WebRequest request) {
+        
+        logger.warn("Authorization failed: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                "ACCESS_DENIED",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
      * Handle illegal argument exceptions (HTTP 400)
      */
     @ExceptionHandler(IllegalArgumentException.class)
