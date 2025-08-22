@@ -2,28 +2,35 @@ package com.example.springbootrestapi.model;
 
 import com.example.springbootrestapi.validation.ValidBusinessEmail;
 import com.example.springbootrestapi.validation.ValidPriority;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 /**
  * Request model for updating tasks with comprehensive validation
  */
+@Schema(description = "Request object for updating an existing task")
 public class UpdateTaskRequest {
     
+    @Schema(description = "Updated task title", example = "Complete project documentation", required = true)
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
     @Pattern(regexp = "^[a-zA-Z0-9\\s\\-_.,!?()]+$", 
              message = "Title contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed")
     private String title;
     
+    @Schema(description = "Updated task description", example = "Write comprehensive documentation for the REST API including all endpoints and examples")
     @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
     
+    @Schema(description = "Updated task status", example = "IN_PROGRESS", required = true)
     @NotNull(message = "Status is required")
     private Task.TaskStatus status;
     
+    @Schema(description = "Updated assignee email", example = "assignee@company.com")
     @ValidBusinessEmail(message = "Invalid business email address")
     private String assigneeEmail;
     
+    @Schema(description = "Updated task priority level (1-5, where 1 is highest)", example = "2", minimum = "1", maximum = "5")
     @ValidPriority
     private Integer priority;
 

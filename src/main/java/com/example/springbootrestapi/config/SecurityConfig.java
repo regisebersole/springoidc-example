@@ -78,9 +78,12 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/actuator/health",
                     "/actuator/info",
+                    "/api-docs/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
-                    "/swagger-ui.html"
+                    "/swagger-ui.html",
+                    "/swagger-resources/**",
+                    "/webjars/**"
                 ).permitAll()
                 
                 // Authentication endpoint - accessible with OIDC token

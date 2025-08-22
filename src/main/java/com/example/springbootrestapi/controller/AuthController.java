@@ -4,6 +4,14 @@ import com.example.springbootrestapi.model.AuthRequest;
 import com.example.springbootrestapi.model.AuthResponse;
 import com.example.springbootrestapi.service.OidcTokenValidator;
 import com.example.springbootrestapi.service.SessionJwtService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000}")
+@Tag(name = "Authentication", description = "Authentication and session management endpoints")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -43,8 +52,49 @@ public class AuthController {
      * @param authRequest Request containing the OIDC access token
      * @return AuthResponse containing session JWT and user information
      */
+    @Operation(
+        summary = "Exchange OIDC access token for session JWT",
+        description = "Validates an OIDC access token with the identity provider and returns a session JWT for subsequent API calls. The session JWT has a 20-minute inactivity timeout and 24-hour maximum duration.",
+        security = @SecurityRequirement(name = "oidcAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token exchange successful",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request format or missing access token",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid or expired OIDC access token",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error during token validation",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        )
+    })
     @PostMapping("/token-exchange")
-    public ResponseEntity<AuthResponse> exchangeToken(@Valid @RequestBody AuthRequest authRequest) {
+    public ResponseEntity<AuthResponse> exchangeToken(
+        @Parameter(description = "Request containing OIDC access token", required = true)
+        @Valid @RequestBody AuthRequest authRequest) {
         try {
             logger.info("Processing token exchange request");
 
@@ -94,9 +144,33 @@ public class AuthController {
      * @param authorizationHeader Authorization header containing the session JWT
      * @return AuthResponse with updated session JWT
      */
+    @Operation(
+        summary = "Refresh session JWT",
+        description = "Updates the activity timestamp in the session JWT to extend the session. This prevents inactivity timeout for active users.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Session refreshed successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid or expired session JWT",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        )
+    })
     @PostMapping("/refresh-session")
     public ResponseEntity<AuthResponse> refreshSession(
-            @RequestHeader("Authorization") String authorizationHeader) {
+        @Parameter(description = "Authorization header with Bearer token", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+        @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String sessionJwt = extractTokenFromHeader(authorizationHeader);
             if (sessionJwt == null) {
@@ -129,6 +203,20 @@ public class AuthController {
     /**
      * Health check endpoint for authentication service
      */
+    @Operation(
+        summary = "Authentication service health check",
+        description = "Returns the health status of the authentication service"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Authentication service is healthy",
+            content = @Content(
+                mediaType = "text/plain",
+                schema = @Schema(type = "string", example = "Authentication service is healthy")
+            )
+        )
+    })
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Authentication service is healthy");

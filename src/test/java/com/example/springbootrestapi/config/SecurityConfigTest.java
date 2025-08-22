@@ -38,7 +38,7 @@ class SecurityConfigTest {
 
     @Test
     void shouldAllowAccessToSwaggerEndpoints() throws Exception {
-        mockMvc.perform(get("/v3/api-docs"))
+        mockMvc.perform(get("/api-docs"))
                 .andExpect(status().isOk());
     }
 
@@ -51,8 +51,8 @@ class SecurityConfigTest {
     @Test
     void shouldAllowAccessToAuthEndpoints() throws Exception {
         // Auth endpoints should be accessible (they handle their own authentication)
-        mockMvc.perform(post("/api/auth/token"))
-                .andExpect(status().isNotFound()); // 404 because endpoint doesn't exist yet, not 401
+        mockMvc.perform(post("/api/auth/token-exchange"))
+                .andExpect(status().isBadRequest()); // 400 because no body provided, not 401
     }
 
     @Test

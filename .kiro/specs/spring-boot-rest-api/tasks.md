@@ -61,7 +61,7 @@
   - Write unit tests for validation scenarios
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 10. Set up API documentation with Swagger
+- [x] 10. Set up API documentation with Swagger
   - Add Swagger/OpenAPI dependencies and configuration
   - Annotate controllers and models for documentation
   - Configure Swagger UI endpoint

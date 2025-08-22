@@ -1,12 +1,21 @@
 package com.example.springbootrestapi.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Response model for authentication endpoint
  */
+@Schema(description = "Response object containing session JWT and user information")
 public class AuthResponse {
     
+    @Schema(description = "JWT session token for subsequent API calls", 
+            example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String sessionToken;
+    
+    @Schema(description = "User information extracted from OIDC token")
     private UserInfo user;
+    
+    @Schema(description = "Session timeout in seconds", example = "1200")
     private Long expiresIn;
 
     public AuthResponse() {}
@@ -44,10 +53,18 @@ public class AuthResponse {
     /**
      * Nested UserInfo class for response
      */
+    @Schema(description = "User information from OIDC token")
     public static class UserInfo {
+        @Schema(description = "Unique user identifier", example = "user123")
         private String userId;
+        
+        @Schema(description = "User email address", example = "user@example.com")
         private String email;
+        
+        @Schema(description = "User display name", example = "John Doe")
         private String name;
+        
+        @Schema(description = "User roles and permissions", example = "[\"user\", \"admin\"]")
         private java.util.List<String> roles;
 
         public UserInfo() {}
