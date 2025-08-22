@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: spring-boot-rest-api-test
+  
+  security:
+    oauth2:
+      resourceserver:
+        opaque-token:
+          introspection-uri: https://oauth2.googleapis.com/tokeninfo
+          client-id: test-client-id
+          client-secret: test-client-secret
+
+app:
+  jwt:
+    secret: testSecretKeyThatIsAtLeast256BitsLongForHmacSha256AlgorithmSecurityTesting
+    expiration: 1200
+    max-session-duration: 86400
+  cors:
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  health:
+    defaults:
+      enabled: true
+
+info:
+  app:
+    name: Spring Boot REST API Test
+    description: Test configuration for Spring Boot REST API
+    version: 1.0.0-TEST
+
+logging:
+  level:
+    com.example.springbootrestapi: DEBUG
+    org.springframework.security: WARN
+    org.springframework.boot.actuator: INFO

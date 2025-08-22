@@ -25,15 +25,31 @@ app:
     allowed-headers: "*"
     allow-credentials: true
 
-# Actuator configuration for health checks
+# Actuator configuration for health checks and monitoring
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,loggers,env,configprops
+      base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
+      show-components: when-authorized
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+  health:
+    defaults:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
 
 # OpenAPI/Swagger configuration
 springdoc:
@@ -57,5 +73,24 @@ logging:
   level:
     com.example.springbootrestapi: INFO
     org.springframework.security: DEBUG
+    org.springframework.boot.actuator: INFO
+    org.springframework.web: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/spring-boot-rest-api.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+
+# Application info for actuator
+info:
+  app:
+    name: Spring Boot REST API
+    description: A secure REST API with OIDC authentication and JWT session management
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 17
