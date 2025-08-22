@@ -82,7 +82,7 @@
   - Add necessary dependencies for OIDC and HTTP client
   - _Requirements: 8.1, 8.2_
 
-- [ ] 13. Implement OIDC PKCE authentication service
+- [x] 13. Implement OIDC PKCE authentication service
   - Create OidcClient service with PKCE flow implementation
   - Implement code verifier and challenge generation
   - Add authorization request and token exchange logic
