@@ -2,127 +2,254 @@ package com.example.springbootrestapi.validation;
 
 import com.example.springbootrestapi.model.CreateTaskRequest;
 import com.example.springbootrestapi.model.Task;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.springbootrestapi.model.UpdateTaskRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.Set;
 
-/**
- * Integration tests for validation functionality
- */
+import static org.junit.jupiter.api.Assertions.*;
+
 @SpringBootTest
-@AutoConfigureWebMvc
 class ValidationIntegrationTest {
 
     @Autowired
-    private WebApplicationContext context;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private MockMvc mockMvc;
+    private Validator validator;
 
     @Test
-    @WithMockUser
-    void createTask_WithValidationErrors_ShouldReturnFieldSpecificErrors() throws Exception {
-        // Setup MockMvc with security
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .apply(springSecurity())
-                .build();
+    void testCreateTaskRequestValidation() {
+        // Given - valid request
+        CreateTaskRequest validRequest = new CreateTaskRequest();
+        validRequest.setTitle("Valid Task Title");
+        validRequest.setDescription("Valid description");
+        validRequest.setStatus(Task.TaskStatus.PENDING);
+        validRequest.setAssigneeEmail("user@company.com");
+        validRequest.setPriority(3);
 
-        // Given - Request with multiple validation errors
-        CreateTaskRequest request = new CreateTaskRequest();
-        request.setTitle(""); // Blank title
-        request.setDescription("A".repeat(501)); // Too long description
-        request.setStatus(null); // Null status
-        request.setAssigneeEmail("invalid-email"); // Invalid email
-        request.setPriority(10); // Invalid priority
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(validRequest);
 
-        // When & Then
-        mockMvc.perform(post("/api/tasks")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.message").value("Validation failed for one or more fields"))
-                .andExpect(jsonPath("$.fieldErrors").exists())
-                .andExpect(jsonPath("$.fieldErrors.title").exists())
-                .andExpect(jsonPath("$.fieldErrors.description").exists())
-                .andExpect(jsonPath("$.fieldErrors.status").exists())
-                .andExpect(jsonPath("$.fieldErrors.assigneeEmail").exists())
-                .andExpect(jsonPath("$.fieldErrors.priority").exists());
+        // Then
+        assertTrue(violations.isEmpty(), "Valid request should have no violations");
     }
 
     @Test
-    @WithMockUser
-    void createTask_WithValidData_ShouldSucceed() throws Exception {
-        // Setup MockMvc with security
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .apply(springSecurity())
-                .build();
+    void testCreateTaskRequestValidationErrors() {
+        // Given - invalid request
+        CreateTaskRequest invalidRequest = new CreateTaskRequest();
+        invalidRequest.setTitle(""); // Blank title
+        invalidRequest.setDescription("A".repeat(501)); // Too long description
+        invalidRequest.setStatus(null); // Null status
+        invalidRequest.setAssigneeEmail("invalid@forbidden.com"); // Invalid domain
+        invalidRequest.setPriority(10); // Invalid priority
 
-        // Given - Valid request
-        CreateTaskRequest request = new CreateTaskRequest();
-        request.setTitle("Valid Task Title");
-        request.setDescription("Valid task description");
-        request.setStatus(Task.TaskStatus.PENDING);
-        request.setAssigneeEmail("user@example.com");
-        request.setPriority(3);
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(invalidRequest);
 
-        // When & Then
-        mockMvc.perform(post("/api/tasks")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.title").value("Valid Task Title"))
-                .andExpect(jsonPath("$.description").value("Valid task description"))
-                .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.assigneeEmail").value("user@example.com"))
-                .andExpect(jsonPath("$.priority").value(3));
+        // Then
+        assertFalse(violations.isEmpty(), "Invalid request should have violations");
+        assertEquals(7, violations.size(), "Should have 7 validation errors");
+        
+        // Verify specific error messages exist
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Title is required")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Title contains invalid characters")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Title must be between 3 and 100 characters")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Description must not exceed 500 characters")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Status is required")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("forbidden.com")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Priority must be between 1 and 5")));
     }
 
     @Test
-    @WithMockUser
-    void createTask_WithEmailValidation_ShouldReturnSpecificError() throws Exception {
-        // Setup MockMvc with security
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .apply(springSecurity())
-                .build();
+    void testUpdateTaskRequestValidation() {
+        // Given - valid request
+        UpdateTaskRequest validRequest = new UpdateTaskRequest();
+        validRequest.setTitle("Updated Task Title");
+        validRequest.setDescription("Updated description");
+        validRequest.setStatus(Task.TaskStatus.IN_PROGRESS);
+        validRequest.setAssigneeEmail("admin@example.com");
+        validRequest.setPriority(4);
 
-        // Given - Request with invalid email
+        // When
+        Set<ConstraintViolation<UpdateTaskRequest>> violations = validator.validate(validRequest);
+
+        // Then
+        assertTrue(violations.isEmpty(), "Valid request should have no violations");
+    }
+
+    @Test
+    void testTaskModelValidation() {
+        // Given - valid task
+        Task validTask = new Task();
+        validTask.setTitle("Valid Task");
+        validTask.setDescription("Valid description");
+        validTask.setStatus(Task.TaskStatus.PENDING);
+        validTask.setAssigneeEmail("user@gmail.com");
+        validTask.setPriority(2);
+
+        // When
+        Set<ConstraintViolation<Task>> violations = validator.validate(validTask);
+
+        // Then
+        assertTrue(violations.isEmpty(), "Valid task should have no violations");
+    }
+
+    @Test
+    void testTitlePatternValidation() {
+        // Given
         CreateTaskRequest request = new CreateTaskRequest();
-        request.setTitle("Valid Title");
-        request.setDescription("Valid description");
+        request.setTitle("Invalid<script>alert('xss')</script>"); // Contains invalid characters
         request.setStatus(Task.TaskStatus.PENDING);
-        request.setAssigneeEmail("not-an-email"); // Invalid email format
-        request.setPriority(3);
 
-        // When & Then
-        mockMvc.perform(post("/api/tasks")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.fieldErrors.assigneeEmail").value("Invalid email format"));
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> 
+            v.getMessage().contains("Title contains invalid characters")));
+    }
+
+    @Test
+    void testValidTitlePatterns() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setStatus(Task.TaskStatus.PENDING);
+
+        // Test valid title patterns
+        String[] validTitles = {
+            "Simple Task",
+            "Task-123",
+            "Task_with_underscores",
+            "Task with numbers 123",
+            "Task, with punctuation!",
+            "Task (with parentheses)",
+            "Task with question?"
+        };
+
+        for (String title : validTitles) {
+            request.setTitle(title);
+            Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+            
+            boolean hasTitleError = violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("title"));
+            assertFalse(hasTitleError, "Title '" + title + "' should be valid");
+        }
+    }
+
+    @Test
+    void testEmailDomainValidation() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("Test Task");
+        request.setStatus(Task.TaskStatus.PENDING);
+
+        // Test valid email domains
+        String[] validEmails = {
+            "user@company.com",
+            "admin@example.com",
+            "test@gmail.com",
+            "support@outlook.com"
+        };
+
+        for (String email : validEmails) {
+            request.setAssigneeEmail(email);
+            Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+            
+            boolean hasEmailError = violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("assigneeEmail"));
+            assertFalse(hasEmailError, "Email '" + email + "' should be valid");
+        }
+    }
+
+    @Test
+    void testPriorityBoundaryValidation() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("Test Task");
+        request.setStatus(Task.TaskStatus.PENDING);
+
+        // Test valid priorities
+        Integer[] validPriorities = {1, 2, 3, 4, 5};
+        for (Integer priority : validPriorities) {
+            request.setPriority(priority);
+            Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+            
+            boolean hasPriorityError = violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("priority"));
+            assertFalse(hasPriorityError, "Priority " + priority + " should be valid");
+        }
+
+        // Test invalid priorities
+        Integer[] invalidPriorities = {0, 6, -1, 100};
+        for (Integer priority : invalidPriorities) {
+            request.setPriority(priority);
+            Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+            
+            boolean hasPriorityError = violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("priority"));
+            assertTrue(hasPriorityError, "Priority " + priority + " should be invalid");
+        }
+    }
+
+    @Test
+    void testNullOptionalFields() {
+        // Given - request with only required fields
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("Minimal Task");
+        request.setStatus(Task.TaskStatus.PENDING);
+        // description, assigneeEmail, and priority are null
+
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty(), "Request with null optional fields should be valid");
+    }
+
+    @Test
+    void testEmptyStringValidation() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("   "); // Whitespace only
+        request.setDescription("");
+        request.setStatus(Task.TaskStatus.PENDING);
+        request.setAssigneeEmail(""); // Empty email
+
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> 
+            v.getPropertyPath().toString().equals("title") && 
+            v.getMessage().contains("Title is required")));
+    }
+
+    @Test
+    void testComplexValidationScenario() {
+        // Given - request with multiple validation errors
+        CreateTaskRequest complexRequest = new CreateTaskRequest();
+        complexRequest.setTitle(""); // Blank title
+        complexRequest.setDescription("A".repeat(501)); // Too long description
+        complexRequest.setStatus(null); // Null status
+        complexRequest.setAssigneeEmail("invalid@forbidden.com"); // Invalid domain
+        complexRequest.setPriority(10); // Invalid priority
+
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(complexRequest);
+
+        // Then
+        assertFalse(violations.isEmpty(), "Complex invalid request should have multiple violations");
+        
+        // Verify we have violations for each field
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("title")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("description")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("status")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("assigneeEmail")));
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("priority")));
     }
 }

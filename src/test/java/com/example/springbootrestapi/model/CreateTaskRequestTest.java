@@ -131,13 +131,13 @@ class CreateTaskRequestTest {
     }
 
     @Test
-    void shouldFailValidationWithInvalidEmail() {
+    void shouldFailValidationWithInvalidEmailDomain() {
         // Given
         CreateTaskRequest request = new CreateTaskRequest();
         request.setTitle("Valid Title");
         request.setDescription("Valid description");
         request.setStatus(Task.TaskStatus.PENDING);
-        request.setAssigneeEmail("invalid-email"); // Invalid email
+        request.setAssigneeEmail("user@forbidden.com"); // Invalid domain
 
         // When
         Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
@@ -146,7 +146,40 @@ class CreateTaskRequestTest {
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("assigneeEmail") &&
-                              v.getMessage().contains("Invalid email format")));
+                              v.getMessage().contains("forbidden.com")));
+    }
+
+    @Test
+    void shouldFailValidationWithInvalidTitleCharacters() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("Invalid<script>alert('xss')</script>"); // Invalid characters
+        request.setDescription("Valid description");
+        request.setStatus(Task.TaskStatus.PENDING);
+
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("title") &&
+                              v.getMessage().contains("Title contains invalid characters")));
+    }
+
+    @Test
+    void shouldPassValidationWithValidTitleCharacters() {
+        // Given
+        CreateTaskRequest request = new CreateTaskRequest();
+        request.setTitle("Valid Task-123 (with punctuation)!"); // Valid characters
+        request.setDescription("Valid description");
+        request.setStatus(Task.TaskStatus.PENDING);
+
+        // When
+        Set<ConstraintViolation<CreateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
@@ -165,7 +198,7 @@ class CreateTaskRequestTest {
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("priority") &&
-                              v.getMessage().contains("Priority must be at least 1")));
+                              v.getMessage().contains("Priority must be between 1 and 5")));
     }
 
     @Test
@@ -184,7 +217,7 @@ class CreateTaskRequestTest {
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("priority") &&
-                              v.getMessage().contains("Priority must not exceed 5")));
+                              v.getMessage().contains("Priority must be between 1 and 5")));
     }
 
     @Test

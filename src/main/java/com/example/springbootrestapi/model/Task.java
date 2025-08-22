@@ -1,5 +1,8 @@
 package com.example.springbootrestapi.model;
 
+import com.example.springbootrestapi.validation.ValidBusinessEmail;
+import com.example.springbootrestapi.validation.ValidPriority;
+import com.example.springbootrestapi.validation.ValidTaskStatus;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
@@ -7,12 +10,15 @@ import java.time.LocalDateTime;
 /**
  * Task model for demonstrating CRUD operations
  */
+@ValidTaskStatus
 public class Task {
     
     private Long id;
     
     @NotBlank(message = "Title is required")
-    @Size(max = 100, message = "Title must not exceed 100 characters")
+    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9\\s\\-_.,!?()]+$", 
+             message = "Title contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed")
     private String title;
     
     @Size(max = 500, message = "Description must not exceed 500 characters")
@@ -25,11 +31,10 @@ public class Task {
     private LocalDateTime updatedAt;
     private String createdBy;
     
-    @Email(message = "Invalid email format")
+    @ValidBusinessEmail(message = "Invalid business email address")
     private String assigneeEmail;
     
-    @Min(value = 1, message = "Priority must be at least 1")
-    @Max(value = 5, message = "Priority must not exceed 5")
+    @ValidPriority
     private Integer priority;
 
     public Task() {

@@ -272,4 +272,6 @@ class GlobalExceptionHandlerTest {
         assertEquals("ACCESS_DENIED", response.getBody().getError());
         assertEquals("Insufficient permissions", response.getBody().getMessage());
     }
+
+
 }

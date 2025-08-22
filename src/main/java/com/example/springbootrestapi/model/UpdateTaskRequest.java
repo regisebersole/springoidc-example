@@ -1,5 +1,7 @@
 package com.example.springbootrestapi.model;
 
+import com.example.springbootrestapi.validation.ValidBusinessEmail;
+import com.example.springbootrestapi.validation.ValidPriority;
 import jakarta.validation.constraints.*;
 
 /**
@@ -9,6 +11,8 @@ public class UpdateTaskRequest {
     
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9\\s\\-_.,!?()]+$", 
+             message = "Title contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed")
     private String title;
     
     @Size(max = 500, message = "Description must not exceed 500 characters")
@@ -17,11 +21,10 @@ public class UpdateTaskRequest {
     @NotNull(message = "Status is required")
     private Task.TaskStatus status;
     
-    @Email(message = "Invalid email format")
+    @ValidBusinessEmail(message = "Invalid business email address")
     private String assigneeEmail;
     
-    @Min(value = 1, message = "Priority must be at least 1")
-    @Max(value = 5, message = "Priority must not exceed 5")
+    @ValidPriority
     private Integer priority;
 
     public UpdateTaskRequest() {}

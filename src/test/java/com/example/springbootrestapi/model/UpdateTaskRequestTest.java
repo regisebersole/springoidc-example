@@ -59,13 +59,13 @@ class UpdateTaskRequestTest {
     }
 
     @Test
-    void shouldFailValidationWithInvalidEmail() {
+    void shouldFailValidationWithInvalidEmailDomain() {
         // Given
         UpdateTaskRequest request = new UpdateTaskRequest();
         request.setTitle("Valid Title");
         request.setDescription("Valid description");
         request.setStatus(Task.TaskStatus.IN_PROGRESS);
-        request.setAssigneeEmail("invalid-email"); // Invalid email
+        request.setAssigneeEmail("user@forbidden.com"); // Invalid domain
 
         // When
         Set<ConstraintViolation<UpdateTaskRequest>> violations = validator.validate(request);
@@ -74,7 +74,44 @@ class UpdateTaskRequestTest {
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("assigneeEmail") &&
-                              v.getMessage().contains("Invalid email format")));
+                              v.getMessage().contains("forbidden.com")));
+    }
+
+    @Test
+    void shouldFailValidationWithInvalidTitleCharacters() {
+        // Given
+        UpdateTaskRequest request = new UpdateTaskRequest();
+        request.setTitle("Invalid<script>alert('xss')</script>"); // Invalid characters
+        request.setDescription("Valid description");
+        request.setStatus(Task.TaskStatus.IN_PROGRESS);
+
+        // When
+        Set<ConstraintViolation<UpdateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("title") &&
+                              v.getMessage().contains("Title contains invalid characters")));
+    }
+
+    @Test
+    void shouldFailValidationWithInvalidPriority() {
+        // Given
+        UpdateTaskRequest request = new UpdateTaskRequest();
+        request.setTitle("Valid Title");
+        request.setDescription("Valid description");
+        request.setStatus(Task.TaskStatus.IN_PROGRESS);
+        request.setPriority(10); // Invalid priority
+
+        // When
+        Set<ConstraintViolation<UpdateTaskRequest>> violations = validator.validate(request);
+
+        // Then
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("priority") &&
+                              v.getMessage().contains("Priority must be between 1 and 5")));
     }
 
     @Test
